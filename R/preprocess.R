@@ -904,9 +904,23 @@ mt_subset <- function(data, subset, check="data") {
   for (use in names(data)) {
 
     if (length(dim(data[[use]])) == 2) {
-      data[[use]] <- data[[use]][
-        rownames(data[[use]]) %in% rownames(data[[check]]),,drop=FALSE
-        ]
+      
+      # for special case of square matrices (e.g., distmat) remove both columns and rows
+      if(class(data[[use]])[1]=="matrix" & dim(data[[use]])[1]==dim(data[[use]])[2]){
+        data[[use]] <- data[[use]][
+          rownames(data[[use]]) %in% rownames(data[[check]]),
+          rownames(data[[use]]) %in% rownames(data[[check]]),
+          drop=FALSE
+          ]
+        
+      # otherwise, only remove rows
+      } else {
+        data[[use]] <- data[[use]][
+          rownames(data[[use]]) %in% rownames(data[[check]]),,drop=FALSE
+          ]
+      }
+      
+      
     } else {
       data[[use]] <- data[[use]][
         rownames(data[[use]]) %in% rownames(data[[check]]),,,drop=FALSE
@@ -1001,5 +1015,88 @@ mt_add_variables <- function(data,
     }
   }
 
+  return(create_results(data=data, results=trajectories_ext, use=use, save_as=save_as))
+}
+
+
+
+#' Add new trajectory to trajectory array.
+#'
+#' Add new trajectory to trajectory array.
+#'
+#' @inheritParams mt_time_normalize
+#' @param xpos a vector of x positions. Ignored, if \code{xypos} is provided.
+#' @param ypos a vector of y positions. Ignored, if \code{xypos} is provided.
+#' @param xypos a matrix, the first column corresponding to the x positions, the
+#'   second to the y positions.
+#' @param id a character string specifying the identifier of the to be added
+#'   trajectory.
+#' @return A mousetrap data object (see \link{mt_example}) where the new 
+#'   trajectory has been added.
+#'   If the trajectory array was provided directly as \code{data}, only the
+#'   trajectory array will be returned.
+#'
+#' @examples
+#' new_trajectory <- cbind(
+#'   c(0,0.5,1),
+#'   c(0,1, 2)
+#'  )
+#'  
+#'  mt_example <- mt_add_trajectory(
+#'    mt_example, xypos=new_trajectory, id = "test_traj"
+#'  )
+#'
+#' @export
+mt_add_trajectory <- function(
+  data,
+  use="trajectories", save_as=use,
+  xpos=NULL, ypos=NULL, xypos=NULL, id = "new") {
+  
+  # Extract trajectories
+  trajectories <- extract_data(data=data,use=use)
+  
+  # New trajectory
+  if(is.null(xypos)){
+    xypos <- rbind(xpos,ypos)
+  } else {
+    xypos <- t(xypos)
+  }
+  
+  rownames(xypos) <- c("xpos","ypos")
+  colnames(xypos) <- NULL
+  
+
+  # Remove potentially existing trajectories of same name
+  # and return warning
+  if (id %in%dimnames(trajectories)[[1]]){
+    stop("Trajectory of same name already exist in data. ",
+         "Please specify a different name using the id argument.")
+  }
+  
+  # Setup new array
+  trajectories_ext <- array(
+    dim=dim(trajectories) + 
+      c(1, 0, max(c(0,ncol(xypos)-dim(trajectories)[3]))),
+    dimnames=list(
+      c(dimnames(trajectories)[[1]],id),
+      dimnames(trajectories)[[2]],
+      dimnames(trajectories)[[3]]
+    )
+  )
+  
+  # Fill it with existing data
+  trajectories_ext[dimnames(trajectories)[[1]],,1:dim(trajectories)[3]] <-
+    trajectories[,,1:dim(trajectories)[3]]
+  
+  # Add new trajectory
+  trajectories_ext[id,rownames(xypos),1:ncol(xypos)] <- xypos
+  
+  # If mousetrap data object is provided, add new line to data
+  if (is_mousetrap_data(data)) {
+    ids <- c(rownames(data$data), id)
+    data$data <- rbind(data$data, NA)
+    rownames(data$data) <- ids
+  }
+  
   return(create_results(data=data, results=trajectories_ext, use=use, save_as=save_as))
 }

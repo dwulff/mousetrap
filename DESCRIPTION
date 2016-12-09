@@ -11,9 +11,12 @@ Maintainer: Pascal J. Kieslich <kieslich@psychologie.uni-mannheim.de>
 Authors@R: c(
     person(c("Pascal","J."), "Kieslich", role= c("aut", "cre"),
             email= "kieslich@psychologie.uni-mannheim.de"),
+    person(c("Dirk","U."), "Wulff", role = "aut",
+    		email = "dirk.wulff@gmail.com"),
     person("Felix", "Henninger", role = "aut",
             email= "mailbox@felixhenninger.com"),
-    person(c("Dirk","U."), "Wulff", role = "ctb"),
+    person(c("Jonas","M. B."), "Haslbeck", role = "aut",
+    		email = "jonas.haslbeck@googlemail.com"),
     person("Sarah", "Brockhaus", role = "ctb")
     )
 URL: https://github.com/pascalkieslich/mousetrap
@@ -34,9 +37,14 @@ Imports:
     scales,
     psych (>= 1.2.4),
     diptest,
-    RColorBrewer
+    RColorBrewer,
+    Rcpp (>= 0.11.4),
+    plyr,
+    cstab,
+    fastcluster
 Suggests:
     readbulk,
     testthat
+LinkingTo: Rcpp
 LazyData: TRUE
 RoxygenNote: 5.0.1
